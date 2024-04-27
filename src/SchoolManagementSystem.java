@@ -1,7 +1,6 @@
 import java.sql.*;
 import java.util.Map;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,12 +13,24 @@ import java.util.regex.Pattern;
  * the school, and which students are registered for those classes and provide
  * basic reporting. This application interacts with a database to store and
  * retrieve data.
+ * 
+ * Built atop hilltop of a re-purpossed 310 final project
+ * @author tonynielsen
  */
 public class SchoolManagementSystem {
 	static int activeClassID = -1;
 	static String currentClass = "";
 
-
+	/**
+	 * Retrieves and lists all classes along with their details from the database.
+	 * This method fetches class information including class ID, course number, term, section,
+	 * class description, and the number of students enrolled in each class.
+	 * The class information is retrieved from the database using a SQL query.
+	 * If there is an error while accessing the database or executing the SQL query,
+	 * an error message is printed to the console.
+	 * 
+	 * @throws SQLException if there is an error accessing the database or executing the SQL query
+	 */
     public static void listAllClasses() {
         Connection connection = null;
         Statement sqlStatement = null;
@@ -66,51 +77,20 @@ public class SchoolManagementSystem {
             }
         }
     }
-
-    public static void listAllStudents() {
-        Connection connection = null;
-        Statement sqlStatement = null;
-
-        try {connection = Database.getDatabaseConnection();
-		sqlStatement = connection.createStatement();
-		
-		String sql = "I student_id, first_name, last_name, birthdate FROM students";
-		sql = String.format(sql);
-		ResultSet resultSet = sqlStatement.executeQuery(sql);
-
-		String output = "Student ID | First Name | Last Name | Birthdate\n";
-
-		while(resultSet.next()) {
-			String studID = resultSet.getString(1);
-			String firstName = resultSet.getString(2);
-			String lastName = resultSet.getString(3);
-			String bDay = resultSet.getString(4);
-
-			String row = studID + " | " + firstName + " | " + lastName + " | " + bDay;
-			output = output + row + "\n";
-
-		}
-		System.out.println(output);
-		connection.close();
-        } catch (SQLException sqlException) {
-            System.out.println("Failed to get students");
-            System.out.println(sqlException.getMessage());
-
-        } finally {
-            try {
-                if (sqlStatement != null)
-                    sqlStatement.close();
-            } catch (SQLException se2) {
-            }
-            try {
-                if (connection != null)
-                    connection.close();
-            } catch (SQLException se) {
-                se.printStackTrace();
-            }
-        }
-    }
     
+    /**
+     * Creates a new class in the database with the provided course details.
+     * This method inserts a new record into the "Class" table of the database
+     * with the specified course number, term, section, and class description.
+     * After successfully creating the class, the generated class ID along with
+     * the course details is printed to the console.
+     * 
+     * @param courseNumber      the course number of the class
+     * @param term              the term of the class
+     * @param section           the section of the class
+     * @param classDescription the description of the class
+     * @throws SQLException     if there is an error accessing the database or executing the SQL query
+     */
     public static void createNewClass(String courseNumber, String term, String section, String classDescription) {
         Connection connection = null;
         Statement sqlStatement = null;
@@ -154,6 +134,16 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Activates a class based on the provided parameters.
+     * This method queries the database to find a class that matches the provided criteria.
+     * If a matching class is found, its details including class ID, course number, term,
+     * section, and description are printed to the console, and the class is marked as active.
+     * If no matching class is found, an appropriate message is printed to the console.
+     * 
+     * @param params an array of strings representing the parameters to match against the database
+     * @throws SQLException if there is an error accessing the database or executing the SQL query
+     */
     public static void activateClass(String... params) {
         Connection connection = null;
         Statement sqlStatement = null;
@@ -198,6 +188,15 @@ public class SchoolManagementSystem {
         }
     }
     
+    
+    /**
+     * Displays the categories and their weights for the currently active class.
+     * If no class is currently selected, it prints a message indicating so and returns.
+     * This method queries the database to retrieve category names and their corresponding weights
+     * for the active class and prints them to the console.
+     * 
+     * @throws SQLException if there is an error accessing the database or executing the SQL query
+     */
     public static void showCategories() {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected.");
@@ -243,6 +242,18 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Adds a new category to the currently active class.
+     * If no class is currently selected, it prints a message indicating so and returns.
+     * This method inserts a new category into the "Category" table of the database
+     * with the provided name, weight, and the ID of the active class.
+     * It then prints a success message if the category is added successfully,
+     * otherwise, it prints a failure message.
+     * 
+     * @param name   the name of the category to be added
+     * @param weight the weight of the category to be added
+     * @throws SQLException if there is an error accessing the database or executing the SQL query
+     */
     public static void addCategory(String name, String weight) {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -284,7 +295,15 @@ public class SchoolManagementSystem {
         }
     }
 
-    // Show the currently active class
+    /**
+     * Displays the currently active class.
+     * 
+     * This method checks if a class is currently active. If not, it prints an error message.
+     * It then retrieves the database connection and creates a statement.
+     * Next, it constructs a SQL query to select class information based on the active class ID.
+     * It executes the query and prints the details of the active class if found.
+     * If no class is found matching the active class ID, it prints an appropriate message.
+     */
     public static void showClass() {
         if (activeClassID == -1) {
             System.out.println("No class is currently active.");
@@ -334,6 +353,15 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Displays all assignments grouped by category for the current class.
+     * 
+     * This method checks if a class is currently selected. If not, it prints an error message.
+     * It then retrieves the database connection and creates a statement.
+     * Next, it constructs a SQL query to retrieve assignments grouped by category, ordered by assignment name.
+     * It executes the query and populates a map with assignments grouped by category.
+     * Finally, it iterates over the map and prints each category along with its assignments and point values.
+     */
     public static void showAssignments() {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -398,7 +426,21 @@ public class SchoolManagementSystem {
             }
         }
     }
-
+    
+    /**
+     * Adds an assignment to the current class.
+     * 
+     * This method checks if a class is currently selected. If not, it prints an error message.
+     * It then retrieves the category ID for the provided category name.
+     * If the category does not exist in the current class, it prints an error message.
+     * Otherwise, it inserts the new assignment into the database with the provided name, description, point value, 
+     * and the retrieved category ID and active class ID.
+     * 
+     * @param name        the name of the assignment
+     * @param category    the category of the assignment
+     * @param description the description of the assignment
+     * @param string      the point value of the assignment
+     */
     public static void addAssignment(String name, String category, String description, String string) {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -444,6 +486,22 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Adds a student to the current class or updates their information if they already exist.
+     * 
+     * This method checks if a class is currently selected. If not, it prints an error message.
+     * It then checks if the student already exists in the database based on the provided username.
+     * If the student exists, it compares the provided school ID, last name, and first name with the stored values.
+     * If any of these values differ, it updates the student's information in the database.
+     * Finally, it enrolls the student in the current class.
+     * 
+     * If the student does not exist, it inserts a new record for the student in the database and enrolls them in the current class.
+     * 
+     * @param username  the username of the student
+     * @param schoolID  the school ID of the student
+     * @param lastName  the last name of the student
+     * @param firstName the first name of the student
+     */
     public static void addStudent(String username, String schoolID, String lastName, String firstName) {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -513,6 +571,15 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Adds a student to the current class.
+     * This method checks if a class is currently selected. If not, it prints an error message.
+     * Then, it checks if the student exists in the database. If the student exists, it verifies if the student is already enrolled in the current class.
+     * If the student is not enrolled, it enrolls the student in the class.
+     * If successful, it prints a success message; otherwise, it prints an error message.
+     * 
+     * @param username the username of the student to be added to the class
+     */
     public static void addStudent(String username) {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -566,6 +633,19 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Grades an assignment for a specified student.
+     * This method first checks if the assignment exists and retrieves its point value.
+     * Then, it verifies if the student exists and converts the provided grade string to an integer.
+     * If the provided grade exceeds the assignment's point value, it issues a warning.
+     * The method then inserts or updates the grade for the student and assignment in the database.
+     * If successful, it prints a success message; otherwise, it prints a failure message.
+     * If the grade format is invalid, it prints an error message.
+     * 
+     * @param assignmentName the name of the assignment to be graded
+     * @param username the username of the student for whom the grade is assigned
+     * @param grade the grade to be assigned to the assignment
+     */
     public static void gradeAssignment(String assignmentName, String username, String grade) {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
@@ -640,6 +720,15 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Retrieves and displays the list of students enrolled in the currently active class whose username,
+     * last name, or first name contains the specified search string.
+     * If no class is currently selected, it prints a message indicating so and returns.
+     * This method queries the database to retrieve information about students matching the search criteria.
+     * It then prints the student ID, username, last name, and first name for each matching student.
+     * 
+     * @param searchString the search string to be used to filter the students' information
+     */
     public static void showStudents(String searchString) {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -690,6 +779,12 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Retrieves and displays the list of students enrolled in the currently active class.
+     * If no class is currently selected, it prints a message indicating so and returns.
+     * This method queries the database to retrieve information about students enrolled in the current class.
+     * It then prints the student ID, username, last name, and first name for each student.
+     */
     public static void showStudents() {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -740,6 +835,17 @@ public class SchoolManagementSystem {
         }
     }
     
+    
+    /**
+     * Retrieves and displays the grades for a student in the currently active class.
+     * If no class is currently selected or the student is not found, it prints an appropriate message and returns.
+     * This method queries the database to retrieve assignments and grades for the specified student in the current class.
+     * It then calculates the category scores based on the earned points and total points for each category,
+     * and computes the overall score as a weighted average of the category scores.
+     * Additionally, it calls the {@code studentPerformance()} method to display the student's attempted grade.
+     * 
+     * @param username the username of the student whose grades are to be retrieved and displayed
+     */
     public static void studentGrades(String username) {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -775,8 +881,6 @@ public class SchoolManagementSystem {
             System.out.println("Grades for " + username + " in the current class:");
             System.out.println();
 
-            double totalScore = 0.0;
-            double totalWeight = 0.0;
             double attemptedScore = 0.0;
             double attemptedWeight = 0.0;
 
@@ -786,7 +890,6 @@ public class SchoolManagementSystem {
             Map<String, List<String>> categoryAssignments = new HashMap<>();
 
             while (resultSet.next()) {
-                int assignmentID = resultSet.getInt("assignmentID");
                 String assignmentName = resultSet.getString("assignmentName");
                 String categoryName = resultSet.getString("categoryName");
                 int grade = resultSet.getInt("grade");
@@ -820,10 +923,6 @@ public class SchoolManagementSystem {
                 System.out.println("Category Score: " + categoryScore);
                 System.out.println();
                 
-                // Add category score weighted by its weight to the total score
-                totalWeight += categoryWeight;
-                totalScore += (categoryScore * categoryWeight);
-                
                 // If the category has a grade, add its weight to calculate the attempted score
                 if (categoryEarnedPoints.containsKey(category)) {
                     attemptedWeight += categoryWeight;
@@ -835,7 +934,7 @@ public class SchoolManagementSystem {
             double finalScore = (attemptedWeight == 0) ? 0.0 : (attemptedScore / attemptedWeight);
             
             studentPerformance(username);
-            System.out.println("Overall Score: " + finalScore);
+            System.out.println("Overall Score: " + finalScore + "%");
 
         } catch (SQLException sqlException) {
             System.out.println("Failed to retrieve student grades");
@@ -855,6 +954,15 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Calculates and displays the overall grade for a student in the currently active class.
+     * If no class is currently selected or the student is not found, it prints an appropriate message and returns.
+     * This method queries the database to retrieve assignments and grades for the specified student in the current class.
+     * It then calculates the category scores based on the earned points and total points for each category,
+     * and computes the overall grade as a weighted average of the category scores.
+     * 
+     * @param username the username of the student whose overall grade is to be calculated
+     */
     public static void overallGrade(String username) {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -933,7 +1041,7 @@ public class SchoolManagementSystem {
             // Calculate the overall score based on attempted weight
             double finalScore = (attemptedWeight == 0) ? 0.0 : (attemptedScore / attemptedWeight);
             
-            System.out.println("Total Score: " + finalScore);
+            System.out.println("Total Score: " + finalScore + "%");
 
         } catch (SQLException sqlException) {
             System.out.println("Failed to retrieve student grades");
@@ -953,6 +1061,15 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Calculates and displays the attempted grade for a student in the currently active class.
+     * If no class is currently selected or the student is not found, it prints an appropriate message and returns.
+     * This method queries the database to retrieve graded assignments for the specified student in the current class.
+     * It then calculates the weighted performance of the student based on the assignment grades and category weights,
+     * and finally computes the overall attempted grade as a percentage.
+     * 
+     * @param username the username of the student whose attempted grade is to be calculated
+     */
     public static void studentPerformance(String username) {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -1029,6 +1146,13 @@ public class SchoolManagementSystem {
         }
     }
     
+    /**
+     * Displays the grade book for the currently active class.
+     * If no class is currently selected, it prints a message indicating so and returns.
+     * This method queries the database to retrieve students enrolled in the current class,
+     * and then iterates over the result set to display each student's information along with their performance.
+     * 
+     */
     public static void gradeBook() {
         if (activeClassID == -1) {
             System.out.println("No class is currently selected. Please select a class first.");
@@ -1090,12 +1214,30 @@ public class SchoolManagementSystem {
         }
     }
 
-    //Helper Methods
+    /**
+     * Enrolls a student into the currently active class.
+     * This method inserts a new enrollment record into the "Enrollment" table of the database
+     * for the specified student and the active class.
+     * 
+     * @param sqlStatement the SQL statement to execute the enrollment query
+     * @param studentID    the ID of the student to enroll
+     * @throws SQLException if there is an error executing the SQL query
+     */
     private static void enrollStudent(Statement sqlStatement, int studentID) throws SQLException {
         String enrollStudentSql = "INSERT INTO Enrollment (classID, studentID) VALUES (" + activeClassID + ", " + studentID + ")";
         sqlStatement.executeUpdate(enrollStudentSql);
     }
-    
+
+    /**
+     * Retrieves the weight of a category from the database.
+     * This method queries the database to retrieve the weight of the specified category
+     * for the currently active class.
+     * 
+     * @param connection the database connection
+     * @param category   the name of the category
+     * @return the weight of the category
+     * @throws SQLException if there is an error accessing the database or executing the SQL query
+     */
     private static double getCategoryWeight(Connection connection, String category) throws SQLException {
         double weight = 0.0;
         Statement statement = null;
@@ -1126,7 +1268,17 @@ public class SchoolManagementSystem {
 
         return weight;
     }
-    
+
+    /**
+     * Retrieves the ID of a category by its name for the currently active class.
+     * This method queries the database to retrieve the ID of the specified category
+     * for the currently active class.
+     * 
+     * @param sqlStatement  the SQL statement to execute the query
+     * @param categoryName  the name of the category
+     * @return the ID of the category
+     * @throws SQLException if there is an error executing the SQL query
+     */
     private static int getCategoryIDByName(Statement sqlStatement, String categoryName) throws SQLException {
         int categoryID = -1;
         String getCategoryIDSql = "SELECT categoryID FROM Category WHERE categoryName = '" + categoryName + "' AND classID = " + activeClassID;
@@ -1137,6 +1289,13 @@ public class SchoolManagementSystem {
         return categoryID;
     }
 
+    /**
+     * Builds the SQL query to activate a class based on the provided parameters.
+     * This method constructs the SQL query dynamically based on the number of parameters provided.
+     * 
+     * @param params an array of strings representing the parameters to match against the database
+     * @return the constructed SQL query
+     */
     private static String buildActivationQuery(String... params) {
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("SELECT classID, courseNumber, term, section, classDescription ");
@@ -1160,6 +1319,7 @@ public class SchoolManagementSystem {
 
     /***
      * Splits a string up by spaces. Spaces are ignored when wrapped in quotes.
+     * 
      *
      * @param command - School Management System cli command
      * @return splits a string by spaces.
@@ -1170,7 +1330,11 @@ public class SchoolManagementSystem {
         while (m.find()) commandArguments.add(m.group(1).replace("\"", ""));
         return commandArguments;
     }
-
+    
+    /**
+     * Main method for function, processes commands and then redirects to more specific
+     * functionality within a specific method.
+     */
     public static void main(String[] args) {
         System.out.println("Welcome to the School Management System");
         System.out.println("-".repeat(80));
@@ -1187,23 +1351,23 @@ public class SchoolManagementSystem {
             commandArguments.remove(0);
 
             if (command.equals("help")) {
-                System.out.println("-".repeat(38) + "Help" + "-".repeat(38));
-                System.out.println("test connection \n\tTests the database connection");
-
-                System.out.println("list students \n\tlists all the students");
-                System.out.println("list classes \n\tlists all the classes");
-                System.out.println("list class_sections \n\tlists all the class_sections");
-                System.out.println("list class_registrations \n\tlists all the class_registrations");
-                System.out.println("list instructor <first_name> <last_name>\n\tlists all the classes taught by that instructor");
-
-
-                System.out.println("delete student <studentId> \n\tdeletes the student");
-                System.out.println("create student <first_name> <last_name> <birthdate> \n\tcreates a student");
-                System.out.println("register student <student_id> <class_section_id>\n\tregisters the student to the class section");
-
-                System.out.println("submit grade <studentId> <class_section_id> <letter_grade> \n\tcreates a student");
-                System.out.println("help \n\tlists help information");
-                System.out.println("quit \n\tExits the program");
+            	System.out.println("Available commands:");
+                System.out.println("- test connection: Test the database connection.");
+                System.out.println("- list-classes: List all available classes.");
+                System.out.println("- create-class [name] [semester] [section] [description]: Create a new class with the given details.");
+                System.out.println("- select-class [class_id]: Activate a class by its ID.");
+                System.out.println("- deselect-class: Deselect the currently active class.");
+                System.out.println("- show-class: Display information about the currently active class.");
+                System.out.println("- show-categories: Display all categories in the active class.");
+                System.out.println("- add-category [name] [weight]: Add a new category to the active class.");
+                System.out.println("- show-assignment: Display all assignments in the active class.");
+                System.out.println("- add-assignment [name] [category] [description] [points value]: Add a new assignment to the active class.");
+                System.out.println("- add-student [username] [student id] [last name] [first name]: Add a new student to the active class.");
+                System.out.println("- show-students [class_id]: Display all students in the active class.");
+                System.out.println("- grade [assignment_id] [username] [grade]: Grade an assignment for a specific student.");
+                System.out.println("- student-grades [username]: Display grades for a specific student.");
+                System.out.println("- gradebook: Display the gradebook for the active class.");
+                System.out.println("- quit or exit: Exit the program.");
             } else if (command.equals("test") && commandArguments.get(0).equals("connection")) {
                 Database.testConnection();
             } else if (command.equals("list-classes")) {
