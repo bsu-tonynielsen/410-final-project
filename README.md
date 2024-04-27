@@ -19,6 +19,3 @@ Allows the creation and maintenance of a school management system, which is impl
 - compile and run schoolManagement.java
 - run `test connection` while in School Management Shell
 - use help
-
-## Video
-The video debrief for this project can be found [here](https://youtu.be/v0MlIYPERy0)
